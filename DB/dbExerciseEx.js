@@ -1,4 +1,5 @@
 const pool = require("./pool.js");
+const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
 
 async function fetchExerciseExecutions(activityliftid) {
   const { rows, rowCount } = await pool.query(
@@ -7,12 +8,10 @@ async function fetchExerciseExecutions(activityliftid) {
   );
 
   if (rowCount === 0) {
-    return {
-      success: false,
-      message: "Exercise Executions not found",
-    };
+    throw new NotFoundError("Exercise Executions not found");
   }
-  return { success: true, exerciseExecutions: rows };
+
+  return rows;
 }
 
 async function insertExerciseExecutions(data) {
@@ -25,17 +24,15 @@ async function insertExerciseExecutions(data) {
   );
 
   if (rowCount === 0) {
-    return {
-      success: false,
-      message: "Failed to create exercise execution",
-    };
+    throw new BadRequestError("Failed to create exercise execution");
   }
-  return { success: true, exerciseExecution: rows[0] };
+
+  return rows[0];
 }
 
 async function updateExerciseExecution(id, data) {
   const keys = Object.keys(data);
-  if (keys.length === 0) return { success: false, message: "Empty data body" };
+  if (keys.length === 0) throw new BadRequestError("Empty data body");
 
   const setClause = keys
     .map((key, index) => `${key} = $${index + 1}`)
@@ -48,8 +45,9 @@ async function updateExerciseExecution(id, data) {
 
   const { rows, rowCount } = await pool.query(query, values);
 
-  if (rowCount === 0) return { success: false, message: "Execution not found" };
-  return { success: true, exerciseExecution: rows[0] };
+  if (rowCount === 0) throw new NotFoundError("Execution not found");
+
+  return rows[0];
 }
 
 async function removeExerciseExecution(id) {
@@ -59,12 +57,10 @@ async function removeExerciseExecution(id) {
   );
 
   if (rowCount === 0) {
-    return {
-      success: false,
-      message: "Exercise Execution not found",
-    };
+    throw new NotFoundError("Exercise Execution not found");
   }
-  return { success: true, message: "Exercise Execution deleted!" };
+
+  return true;
 }
 
 module.exports = {

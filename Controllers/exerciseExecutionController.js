@@ -1,81 +1,60 @@
 const db = require("../DB/dbExerciseEx.js");
+const asyncHandler = require("../utils/asyncHandler");
+const { NotFoundError } = require("../Errors/errors.js");
 
-async function getExerciseExecutions(req, res) {
+const getExerciseExecutions = asyncHandler(async (req, res) => {
   const activityLiftId = req.params.activityLiftId;
-  try {
-    const exerciseExecutions = await db.fetchExerciseExecutions(activityLiftId);
-    if (!exerciseExecutions.success) {
-      return res.status(404).json({
-        message: "Exercises not found or you don't have permission for it.",
-      });
-    }
-    res.status(200).json(exerciseExecutions);
-  } catch (err) {
-    console.error(err);
+  const exerciseExecutions = await db.fetchExerciseExecutions(activityLiftId);
 
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
-  }
-}
-
-async function createExerciseExecution(req, res) {
-  req.body.activityliftid = req.params.activityLiftId;
-  try {
-    const exerciseExecution = await db.insertExerciseExecutions(req.body);
-    if (!exerciseExecution.success) {
-      return res.status(404).json({
-        message: "Exercises not found or you don't have permission for it.",
-      });
-    }
-    res.status(201).json(exerciseExecution);
-  } catch (err) {
-    console.error(err);
-
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
-  }
-}
-
-async function updateExerciseExecutionInfo(req, res) {
-  try {
-    const exerciseExecution = await db.updateExerciseExecution(
-      req.params.id,
-      req.body,
+  if (!exerciseExecutions.success) {
+    throw new NotFoundError(
+      "Exercises not found or you don't have permission for it.",
     );
-    if (!exerciseExecution.success) {
-      return res.status(404).json({
-        message: "Exercise not found or you don't have permission for it.",
-      });
-    }
-    res.status(200).json(exerciseExecution);
-  } catch (err) {
-    console.error(err);
-
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
   }
-}
 
-async function deleteExerciseExecution(req, res) {
-  try {
-    const exerciseExecution = await db.removeExerciseExecution(req.params.id);
-    if (!exerciseExecution.success) {
-      return res.status(404).json({
-        message: "Exercise not found or you don't have permission for it.",
-      });
-    }
-    res.status(200).json({ message: "Deleted successfully" });
-  } catch (err) {
-    console.error(err);
+  res.status(200).json(exerciseExecutions);
+});
 
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+const createExerciseExecution = asyncHandler(async (req, res) => {
+  req.body.activityliftid = req.params.activityLiftId;
+  const exerciseExecution = await db.insertExerciseExecutions(req.body);
+
+  if (!exerciseExecution.success) {
+    throw new NotFoundError(
+      "Exercises not found or you don't have permission for it.",
+    );
   }
-}
+
+  res.status(201).json(exerciseExecution);
+});
+
+const updateExerciseExecutionInfo = asyncHandler(async (req, res) => {
+  const exerciseExecution = await db.updateExerciseExecution(
+    req.params.id,
+    req.body,
+  );
+
+  if (!exerciseExecution.success) {
+    throw new NotFoundError(
+      "Exercise not found or you don't have permission for it.",
+    );
+  }
+
+  res.status(200).json(exerciseExecution);
+});
+
+const deleteExerciseExecution = asyncHandler(async (req, res) => {
+  const exerciseExecution = await db.removeExerciseExecution(req.params.id);
+
+  if (!exerciseExecution.success) {
+    throw new NotFoundError(
+      "Exercise not found or you don't have permission for it.",
+    );
+  }
+
+  res.status(200).json({ message: "Deleted successfully" });
+});
+
 module.exports = {
   getExerciseExecutions,
   createExerciseExecution,

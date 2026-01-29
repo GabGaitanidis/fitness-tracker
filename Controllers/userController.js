@@ -1,97 +1,66 @@
 const db = require("../DB/db.js");
+const asyncHandler = require("../utils/asyncHandler.js");
+const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
 
-async function createUser(req, res) {
+const createUser = asyncHandler(async (req, res) => {
   try {
     const user = await db.insertUser(req.body);
     if (!user) {
-      return res.status(404).json({ message: "User not found!" });
+      throw new NotFoundError("User not found!");
     }
     res.status(201).json({ user });
   } catch (err) {
-    console.error(err);
-
     if (err.code === "23505") {
-      return res.status(409).json({
-        error: "Username or email already exists",
-      });
+      throw new BadRequestError("Username or email already exists");
     }
-
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+    throw err;
   }
-}
+});
 
-async function getUsers(req, res) {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const sortByFields = ["username", "created_at"];
-    const sortBy = sortByFields.includes(req.query.sortBy)
-      ? req.query.sortBy
-      : "created_at";
-    const order = req.query.order?.toUpperCase() === "DESC" ? "DESC" : "ASC";
-    const filter_username = req.query.username;
-    const users = await db.fetchUsers(sortBy, order, filter_username, page);
-    if (!users) {
-      return res.status(404).json({ message: "Users not found!" });
-    }
-    res.status(200).json(users);
-  } catch (err) {
-    console.error(err);
+const getUsers = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const sortByFields = ["username", "created_at"];
+  const sortBy = sortByFields.includes(req.query.sortBy)
+    ? req.query.sortBy
+    : "created_at";
+  const order = req.query.order?.toUpperCase() === "DESC" ? "DESC" : "ASC";
+  const filter_username = req.query.username;
 
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+  const users = await db.fetchUsers(sortBy, order, filter_username, page);
+  if (!users) {
+    throw new NotFoundError("Users not found!");
   }
-}
-async function removeUser(req, res) {
-  try {
-    const user = await db.deleteUser(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" });
-    }
-    res.status(204);
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+  res.status(200).json(users);
+});
+
+const removeUser = asyncHandler(async (req, res) => {
+  const user = await db.deleteUser(req.params.id);
+  if (!user) {
+    throw new NotFoundError("User not found!");
   }
-}
+  res.status(204).send();
+});
 
-async function updateBodyInfo(req, res) {
-  try {
-    const userInfo = await db.updateBodyInfo(req.body, req.params.id);
-
-    if (!userInfo) {
-      return res.status(404).json({ message: "User not found!" });
-    }
-
-    res.status(200).json(userInfo);
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+const updateBodyInfo = asyncHandler(async (req, res) => {
+  const userInfo = await db.updateBodyInfo(req.body, req.params.id);
+  if (!userInfo) {
+    throw new NotFoundError("User not found!");
   }
-}
+  res.status(200).json(userInfo);
+});
 
-async function getUser(req, res) {
-  try {
-    const id = req.params.id;
-    const queries = Array.isArray(req.query.queries)
-      ? req.query.queries
-      : [req.query.queries].filter(Boolean);
-    const userInfo = await db.fetchUserCols(id, queries);
-    return res.status(200).json(userInfo);
-  } catch (err) {
-    console.error(err);
-
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+const getUser = asyncHandler(async (req, res) => {
+  const id = req.params.id;
+  const queries = Array.isArray(req.query.queries)
+    ? req.query.queries
+    : [req.query.queries].filter(Boolean);
+  const userInfo = await db.fetchUserCols(id, queries);
+  if (!userInfo) {
+    throw new NotFoundError("User not found!");
   }
-}
+  res.status(200).json(userInfo);
+});
+
 module.exports = {
   createUser,
   getUsers,

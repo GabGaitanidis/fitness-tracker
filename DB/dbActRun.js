@@ -1,4 +1,5 @@
 const pool = require("./pool.js");
+const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
 
 async function fetchActivityRuns(
   userId,
@@ -10,45 +11,34 @@ async function fetchActivityRuns(
   const limit = 3;
   const offset = (page - 1) * limit;
 
-  if (!category) {
-    const { rows, rowCount } = await pool.query(
-      `SELECT id, user_id, name, date, location, duration::text AS duration, category 
-       FROM activityrun 
-       WHERE user_id = $1 
-       ORDER BY ${sortBy} ${order} NULLS LAST 
-       LIMIT ${limit} OFFSET ${offset}`,
-      [userId],
-    );
-
-    if (rowCount === 0)
-      return { success: false, message: "Activities not found" };
-    return { success: true, activityRuns: rows };
-  } else {
+  let validCategory = category;
+  if (category) {
     const { rows: catRows } = await pool.query(
       "SELECT DISTINCT category FROM activityrun WHERE user_id = $1",
       [userId],
     );
-
-    const valid_category = catRows.some((r) => r.category === category)
+    validCategory = catRows.some((r) => r.category === category)
       ? category
       : "Walking";
-
-    const { rows, rowCount } = await pool.query(
-      `SELECT id, user_id, name, date, location, duration::text AS duration, category 
-       FROM activityrun 
-       WHERE user_id = $1 AND category = $2
-       ORDER BY ${sortBy} ${order} NULLS LAST 
-       LIMIT ${limit} OFFSET ${offset}`,
-      [userId, valid_category],
-    );
-
-    if (rowCount === 0)
-      return {
-        success: false,
-        message: "No activities found in this category",
-      };
-    return { success: true, activityRuns: rows };
   }
+
+  const query = `
+    SELECT id, user_id, name, date, location, duration::text AS duration, category 
+    FROM activityrun 
+    WHERE user_id = $1 
+    ${validCategory ? "AND category = $2" : ""}
+    ORDER BY ${sortBy} ${order} NULLS LAST 
+    LIMIT ${validCategory ? "$3" : "$2"} OFFSET ${validCategory ? "$4" : "$3"}
+  `;
+
+  const queryParams = validCategory
+    ? [userId, validCategory, limit, offset]
+    : [userId, limit, offset];
+
+  const { rows } = await pool.query(query, queryParams);
+
+  // Returning an empty array is standard for "fetch all" even if no results
+  return rows;
 }
 
 async function fetchActivityRun(id, userId) {
@@ -57,8 +47,9 @@ async function fetchActivityRun(id, userId) {
     [id, userId],
   );
 
-  if (rowCount === 0) return { success: false, message: "Activity not found" };
-  return { success: true, activityRuns: rows };
+  if (rowCount === 0) throw new NotFoundError("Activity not found");
+
+  return rows[0];
 }
 
 async function insertActivityRun(data) {
@@ -72,14 +63,14 @@ async function insertActivityRun(data) {
     values,
   );
 
-  if (rowCount === 0)
-    return { success: false, message: "Failed to insert activity" };
-  return { success: true, activityRuns: rows };
+  if (rowCount === 0) throw new BadRequestError("Failed to insert activity");
+
+  return rows[0];
 }
 
 async function updateActivityRun(id, userId, data) {
   const keys = Object.keys(data);
-  if (keys.length === 0) return { success: false, message: "Empty data body" };
+  if (keys.length === 0) throw new BadRequestError("Empty data body");
 
   const setClause = keys
     .map((key, index) => `${key} = $${index + 1}`)
@@ -96,8 +87,9 @@ async function updateActivityRun(id, userId, data) {
   const { rows, rowCount } = await pool.query(query, values);
 
   if (rowCount === 0)
-    return { success: false, message: "Activity not found or unauthorized" };
-  return { success: true, data: rows };
+    throw new NotFoundError("Activity not found or unauthorized");
+
+  return rows[0];
 }
 
 async function deleteActivityRun(id, userId) {
@@ -106,8 +98,9 @@ async function deleteActivityRun(id, userId) {
     [id, userId],
   );
 
-  if (rowCount === 0) return { success: false, message: "Activity not found" };
-  return { success: true, message: "Activity deleted successfully" };
+  if (rowCount === 0) throw new NotFoundError("Activity not found");
+
+  return true;
 }
 
 module.exports = {

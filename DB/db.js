@@ -1,4 +1,5 @@
 const pool = require("./pool.js");
+const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
 
 async function fetchUsers(sortBy, order, username = undefined, page = 1) {
   const limit = 3;
@@ -6,82 +7,89 @@ async function fetchUsers(sortBy, order, username = undefined, page = 1) {
 
   if (!username) {
     const query = `
-      SELECT * FROM users 
+      SELECT id, username, email, created_at FROM users 
       ORDER BY ${sortBy} ${order} 
       LIMIT $1 OFFSET $2
     `;
-
-    const users = await pool.query(query, [limit, offset]);
-    return users.rows;
+    const { rows } = await pool.query(query, [limit, offset]);
+    return rows;
   }
-  const user = await pool.query("SELECT * FROM users WHERE username = $1", [
-    username,
-  ]);
-  return user.rows;
+
+  const { rows } = await pool.query(
+    "SELECT id, username, email, created_at FROM users WHERE username = $1",
+    [username],
+  );
+  return rows;
 }
 
 async function fetchUserCols(id, queries) {
-  if (queries.length) {
+  if (queries.length > 0) {
     const allowedCols = ["username", "age", "weight", "height", "city"];
-    const validQueries = queries.filter((en) => allowedCols.includes(en));
-    const queryPromises = validQueries.map((col) => {
-      return pool.query(`SELECT ${col} FROM users WHERE id = $1`, [id]);
-    });
+    const validQueries = queries.filter((col) => allowedCols.includes(col));
 
-    const results = await Promise.all(queryPromises);
-    return results.map((res) => res.rows);
+    if (validQueries.length === 0)
+      throw new BadRequestError("No valid columns requested");
+
+    const query = `SELECT ${validQueries.join(", ")} FROM users WHERE id = $1`;
+    const { rows, rowCount } = await pool.query(query, [id]);
+
+    if (rowCount === 0) throw new NotFoundError("User not found");
+    return rows[0];
   } else {
-    const user = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-    return user.rows;
+    const { rows, rowCount } = await pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [id],
+    );
+    if (rowCount === 0) throw new NotFoundError("User not found");
+    return rows[0];
   }
 }
 
 async function insertUser(data) {
-  const bcrypt = require("bcrypt");
   const { username, email, password } = data;
-  const user = await pool.query(
+  const { rows } = await pool.query(
     "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
     [username, email, password],
   );
-  return user.rows;
+  return rows[0];
 }
 
 async function deleteUser(id) {
-  const user = await pool.query("DELETE FROM users WHERE id = $1 RETURNING *", [
-    id,
-  ]);
-  return user.rows;
+  const { rows, rowCount } = await pool.query(
+    "DELETE FROM users WHERE id = $1 RETURNING id",
+    [id],
+  );
+  if (rowCount === 0) throw new NotFoundError("User not found");
+  return rows[0];
 }
 
 async function updateBodyInfo(data, id) {
-  const entries = Object.entries(data);
-  if (entries.length === 0) return null;
+  const keys = Object.keys(data);
+  if (keys.length === 0) throw new BadRequestError("Empty data body");
 
-  const dataPromises = entries.map(([column, value]) => {
-    return pool.query(`UPDATE users SET ${column} = $1 WHERE id = $2`, [
-      value,
-      id,
-    ]);
-  });
+  const setClause = keys
+    .map((key, index) => `${key} = $${index + 1}`)
+    .join(", ");
+  const values = Object.values(data);
+  values.push(id);
 
-  await Promise.all(dataPromises);
+  const query = `UPDATE users SET ${setClause} WHERE id = $${values.length} RETURNING *`;
+  const { rows, rowCount } = await pool.query(query, values);
 
-  const finalResult = await pool.query("SELECT * FROM users WHERE id = $1", [
-    id,
-  ]);
-
-  return finalResult.rows[0];
+  if (rowCount === 0) throw new NotFoundError("User not found");
+  return rows[0];
 }
 
 async function fetchUser(username) {
-  const user = await pool.query("SELECT * FROM users WHERE username = $1", [
-    username,
-  ]);
-  if (!user.rowCount) {
-    return { success: false, message: "Activities not found or unauthorized" };
-  }
-  return user.rows[0];
+  const { rows, rowCount } = await pool.query(
+    "SELECT * FROM users WHERE username = $1",
+    [username],
+  );
+
+  if (rowCount === 0) throw new NotFoundError("User not found");
+  return rows[0];
 }
+
 module.exports = {
   insertUser,
   fetchUser,

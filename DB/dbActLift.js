@@ -1,4 +1,5 @@
 const pool = require("./pool.js");
+const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
 
 async function fetchActivityLifts(
   userId,
@@ -10,62 +11,48 @@ async function fetchActivityLifts(
   const limit = 3;
   const offset = (page - 1) * limit;
 
-  if (!category) {
-    const activityLift = await pool.query(
-      `SELECT id, user_id, name, date, location, duration::text AS duration, category 
-     FROM activitylift 
-     WHERE user_id = $1 
-     ORDER BY ${sortBy} ${order} NULLS LAST 
-     LIMIT ${limit} OFFSET ${offset}`,
-      [userId],
-    );
-    if (activityLift.rowCount === 0) {
-      return {
-        success: false,
-        message: "Activities not found or unauthorized",
-      };
-    }
-    return { success: true, activityLifts: activityLift.rows };
-  } else {
-    const categories = await pool.query(
+  let validCategory = category;
+  if (category) {
+    const { rows: catRows } = await pool.query(
       "SELECT DISTINCT category FROM activitylift WHERE user_id = $1",
       [userId],
     );
-    const valid_category = categories.rows.some((r) => r.category === category)
+    validCategory = catRows.some((r) => r.category === category)
       ? category
       : "Strength";
-
-    const activityLift = await pool.query(
-      `SELECT id, user_id, name, date, location, duration::text AS duration, category 
-     FROM activitylift 
-     WHERE user_id = $1 
-     AND category = $2
-     ORDER BY ${sortBy} ${order} NULLS LAST 
-     LIMIT ${limit} OFFSET ${offset}`,
-      [userId, valid_category],
-    );
-    if (activityLift.rowCount === 0) {
-      return {
-        success: false,
-        message: "Activities not found",
-      };
-    }
-    return { success: true, activityLifts: activityLift.rows };
   }
+
+  const query = `
+    SELECT id, user_id, name, date, location, duration::text AS duration, category 
+    FROM activitylift 
+    WHERE user_id = $1 
+    ${validCategory ? "AND category = $2" : ""}
+    ORDER BY ${sortBy} ${order} NULLS LAST 
+    LIMIT ${validCategory ? "$3" : "$2"} OFFSET ${validCategory ? "$4" : "$3"}
+  `;
+
+  const queryParams = validCategory
+    ? [userId, validCategory, limit, offset]
+    : [userId, limit, offset];
+
+  const { rows } = await pool.query(query, queryParams);
+
+  // Note: We return empty array if no rows,
+  // typical for "fetch all" search/filter scenarios.
+  return rows;
 }
 
 async function fetchActivityLift(id, userId) {
-  const activityLift = await pool.query(
+  const { rows, rowCount } = await pool.query(
     "SELECT * FROM activitylift WHERE id = $1 AND user_id = $2",
     [id, userId],
   );
-  if (activityLift.rowCount === 0) {
-    return {
-      success: false,
-      message: "Activity not found",
-    };
+
+  if (rowCount === 0) {
+    throw new NotFoundError("Activity not found");
   }
-  return { success: true, activityLift: activityLift.rows[0] };
+
+  return rows[0];
 }
 
 async function insertActivityLift(data) {
@@ -79,55 +66,61 @@ async function insertActivityLift(data) {
 
   const values = [user_id, name, date, location, duration, category];
 
-  const activityLift = await pool.query(query, values);
-  if (activityLift.rowCount === 0) {
-    return {
-      success: false,
-      message: "Could not create activity",
-    };
+  const { rows, rowCount } = await pool.query(query, values);
+
+  if (rowCount === 0) {
+    throw new BadRequestError("Could not create activity");
   }
-  return { success: true, activityLift: activityLift.rows[0] };
+
+  return rows[0];
 }
 
 async function updateActivityLift(id, userId, data) {
-  const entries = Object.entries(data);
-  const dataPromises = entries.map(([column, value]) => {
-    return pool.query(
-      `UPDATE activitylift SET ${column} = $1 WHERE user_id = $2 and id = $3`,
-      [value, userId, id],
-    );
-  });
+  const ALLOWED_FIELDS = ["name", "date", "location", "duration", "category"];
 
-  await Promise.all(dataPromises);
-
-  const activityLift = await pool.query(
-    "SELECT * FROM activitylift WHERE id = $1",
-    [id],
+  const entries = Object.entries(data).filter(([key]) =>
+    ALLOWED_FIELDS.includes(key),
   );
 
-  if (activityLift.rowCount === 0) {
-    return {
-      success: false,
-      message: "Activity not found",
-    };
+  if (entries.length === 0) {
+    throw new BadRequestError("No valid fields to update");
   }
-  return { success: true, activityLift: activityLift.rows[0] };
+
+  const setClause = entries
+    .map(([key], index) => `${key} = $${index + 1}`)
+    .join(", ");
+
+  const values = entries.map(([, value]) => value);
+  values.push(userId, id);
+
+  const query = `
+    UPDATE activitylift
+    SET ${setClause}
+    WHERE user_id = $${values.length - 1}
+      AND id = $${values.length}
+    RETURNING *;
+  `;
+
+  const { rows, rowCount } = await pool.query(query, values);
+
+  if (rowCount === 0) {
+    throw new NotFoundError("Activity not found or unauthorized");
+  }
+
+  return rows[0];
 }
 
 async function deleteActivityLift(id, userId) {
-  const result = await pool.query(
+  const { rowCount } = await pool.query(
     "DELETE FROM activitylift WHERE id = $1 AND user_id = $2",
     [id, userId],
   );
 
-  if (result.rowCount === 0) {
-    return {
-      success: false,
-      message: "Activity not found or unauthorized",
-    };
+  if (rowCount === 0) {
+    throw new NotFoundError("Activity not found or unauthorized");
   }
 
-  return { success: true };
+  return true;
 }
 
 module.exports = {

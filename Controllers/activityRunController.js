@@ -1,119 +1,93 @@
 const db = require("../DB/dbActRun.js");
+const asyncHandler = require("../utils/asyncHandler");
+const { NotFoundError, UnauthorizedError } = require("../Errors/errors.js");
 
-async function getActivityRuns(req, res) {
-  const userId = req.user.id;
+const getActivityRuns = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
   if (!userId) {
-    return res.status(404).json({ message: "User not found!" });
+    throw new UnauthorizedError("User not found!");
   }
-  try {
-    const sortByFields = ["name", "duration", "date"];
-    const page = parseInt(req.query.page) || 1;
-    const sortBy = sortByFields.includes(req.query.sort)
-      ? req.query.sort
-      : "date";
-    const order = req.query.order?.toUpperCase() == "DESC" ? "DESC" : "ASC";
-    const category = req.query.category;
-    const activityRuns = await db.fetchActivityRuns(
-      userId,
-      page,
-      sortBy,
-      order,
-      category,
+
+  const sortByFields = ["name", "duration", "date"];
+  const page = parseInt(req.query.page) || 1;
+  const sortBy = sortByFields.includes(req.query.sort)
+    ? req.query.sort
+    : "date";
+  const order = req.query.order?.toUpperCase() === "DESC" ? "DESC" : "ASC";
+  const category = req.query.category;
+
+  const activityRuns = await db.fetchActivityRuns(
+    userId,
+    page,
+    sortBy,
+    order,
+    category,
+  );
+
+  if (!activityRuns.success) {
+    throw new NotFoundError(
+      "Activity not found or you don't have permission for it.",
     );
-    if (!activityRuns.success) {
-      return res.status(404).json({
-        message: "Activity not found or you don't have permission for it.",
-      });
-    }
-    res.status(200).json(activityRuns);
-  } catch (err) {
-    console.error(err);
-
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
   }
-}
 
-async function getActivityRun(req, res) {
+  res.status(200).json(activityRuns);
+});
+
+const getActivityRun = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const id = req.params.id;
-  try {
-    const activityRun = await db.fetchActivityRun(id, userId);
-    if (!activityRun.success) {
-      return res.status(404).json({
-        message: "Activity not found or you don't have permission for it.",
-      });
-    }
-    res.status(200).json(activityRun);
-  } catch (err) {
-    console.error(err);
 
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+  const activityRun = await db.fetchActivityRun(id, userId);
+  if (!activityRun.success) {
+    throw new NotFoundError(
+      "Activity not found or you don't have permission for it.",
+    );
   }
-}
 
-async function createActivityRun(req, res) {
+  res.status(200).json(activityRun);
+});
+
+const createActivityRun = asyncHandler(async (req, res) => {
   req.body.user_id = req.user.id;
-  try {
-    const activityRun = await db.insertActivityRun(req.body);
-    if (!activityRun.success) {
-      return res.status(404).json({
-        message: "Activity not found or you don't have permission for it.",
-      });
-    }
-    res.status(201).json(activityRun);
-  } catch (err) {
-    console.error(err);
 
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+  const activityRun = await db.insertActivityRun(req.body);
+  if (!activityRun.success) {
+    throw new NotFoundError(
+      "Activity not found or you don't have permission for it.",
+    );
   }
-}
-async function updateActivityRun(req, res) {
+
+  res.status(201).json(activityRun);
+});
+
+const updateActivityRun = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const id = req.params.id;
-  try {
-    const activityRun = await db.updateActivityRun(id, userId, req.body);
-    if (!activityRun.success) {
-      return res.status(404).json({
-        message: "Activity not found or you don't have permission for it.",
-      });
-    }
-    res.status(200).json(activityRun);
-  } catch (err) {
-    console.error(err);
 
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+  const activityRun = await db.updateActivityRun(id, userId, req.body);
+  if (!activityRun.success) {
+    throw new NotFoundError(
+      "Activity not found or you don't have permission for it.",
+    );
   }
-}
-async function deleteActivityRun(req, res) {
+
+  res.status(200).json(activityRun);
+});
+
+const deleteActivityRun = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const activityId = req.params.id;
 
-  try {
-    const result = await db.deleteActivityRun(activityId, userId);
-
-    if (!result.success) {
-      return res.status(404).json({
-        message:
-          "Activity not found or you don't have permission to delete it.",
-      });
-    }
-
-    res.status(200).json({ message: "Deleted successfully" });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: err.message });
+  const result = await db.deleteActivityRun(activityId, userId);
+  if (!result.success) {
+    throw new NotFoundError(
+      "Activity not found or you don't have permission to delete it.",
+    );
   }
-}
+
+  res.status(200).json({ message: "Deleted successfully" });
+});
+
 module.exports = {
   getActivityRuns,
   getActivityRun,
