@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
-// goalsLift Router
-router.get("/");
-router.get("/user/:id");
-router.get("/:id");
-router.post("/");
-router.put("/:id");
-router.delete("/:id");
+const controller = require("../Controllers/goalLiftController");
+
+router.get("/", controller.getLiftGoal);
+router.post("/", controller.createLiftGoal);
+router.patch("/:id", controller.updateLiftGoal);
+router.delete("/:id", controller.deleteLiftGoal);
 
 module.exports = router;

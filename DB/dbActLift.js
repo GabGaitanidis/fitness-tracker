@@ -37,8 +37,6 @@ async function fetchActivityLifts(
 
   const { rows } = await pool.query(query, queryParams);
 
-  // Note: We return empty array if no rows,
-  // typical for "fetch all" search/filter scenarios.
   return rows;
 }
 
@@ -78,20 +76,12 @@ async function insertActivityLift(data) {
 async function updateActivityLift(id, userId, data) {
   const ALLOWED_FIELDS = ["name", "date", "location", "duration", "category"];
 
-  const entries = Object.entries(data).filter(([key]) =>
-    ALLOWED_FIELDS.includes(key),
+  const [setClause, values] = validQueryGenerator(
+    ALLOWED_FIELDS,
+    userId,
+    id,
+    data,
   );
-
-  if (entries.length === 0) {
-    throw new BadRequestError("No valid fields to update");
-  }
-
-  const setClause = entries
-    .map(([key], index) => `${key} = $${index + 1}`)
-    .join(", ");
-
-  const values = entries.map(([, value]) => value);
-  values.push(userId, id);
 
   const query = `
     UPDATE activitylift

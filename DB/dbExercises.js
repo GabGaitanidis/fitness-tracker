@@ -30,15 +30,13 @@ async function insertExercise(userId, data) {
 }
 
 async function updateExercise(userId, id, data) {
-  const keys = Object.keys(data);
-  if (keys.length === 0) throw new BadRequestError("Empty data body");
-
-  const setClause = keys
-    .map((key, index) => `${key} = $${index + 1}`)
-    .join(", ");
-
-  const values = Object.values(data);
-  values.push(userId, id);
+  ALLOWED_FIELDS = ["name", "category"];
+  const [setClause, values] = validQueryGenerator(
+    ALLOWED_FIELDS,
+    userId,
+    id,
+    data,
+  );
 
   const query = `UPDATE exercises SET ${setClause} WHERE user_id = $${values.length - 1} AND id = $${values.length} RETURNING *`;
 

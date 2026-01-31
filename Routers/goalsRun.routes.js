@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
-// goalsRun Router
-router.get("/");
-router.get("/user/:id");
-router.get("/:id");
-router.post("/");
-router.put("/:id");
-router.delete("/:id");
+const controller = require("../Controllers/goalRunController");
+
+router.get("/", controller.getRunGoal);
+router.post("/", controller.createRunGoal);
+router.patch("/:id", controller.updateRunGoal);
+router.delete("/:id", controller.deleteRunGoal);
 
 module.exports = router;

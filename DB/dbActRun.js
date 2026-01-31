@@ -37,7 +37,6 @@ async function fetchActivityRuns(
 
   const { rows } = await pool.query(query, queryParams);
 
-  // Returning an empty array is standard for "fetch all" even if no results
   return rows;
 }
 
@@ -69,14 +68,14 @@ async function insertActivityRun(data) {
 }
 
 async function updateActivityRun(id, userId, data) {
-  const keys = Object.keys(data);
-  if (keys.length === 0) throw new BadRequestError("Empty data body");
+  const ALLOWED_FIELDS = ["name", "date", "location", "duration", "category"];
 
-  const setClause = keys
-    .map((key, index) => `${key} = $${index + 1}`)
-    .join(", ");
-  const values = Object.values(data);
-  values.push(userId, id);
+  const [setClause, values] = validQueryGenerator(
+    ALLOWED_FIELDS,
+    userId,
+    id,
+    data,
+  );
 
   const query = `
     UPDATE activityrun 

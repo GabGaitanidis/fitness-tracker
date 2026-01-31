@@ -38,11 +38,6 @@ const getActivityRun = asyncHandler(async (req, res) => {
   const id = req.params.id;
 
   const activityRun = await db.fetchActivityRun(id, userId);
-  if (!activityRun.success) {
-    throw new NotFoundError(
-      "Activity not found or you don't have permission for it.",
-    );
-  }
 
   res.status(200).json(activityRun);
 });
@@ -51,11 +46,6 @@ const createActivityRun = asyncHandler(async (req, res) => {
   req.body.user_id = req.user.id;
 
   const activityRun = await db.insertActivityRun(req.body);
-  if (!activityRun.success) {
-    throw new NotFoundError(
-      "Activity not found or you don't have permission for it.",
-    );
-  }
 
   res.status(201).json(activityRun);
 });
@@ -65,11 +55,6 @@ const updateActivityRun = asyncHandler(async (req, res) => {
   const id = req.params.id;
 
   const activityRun = await db.updateActivityRun(id, userId, req.body);
-  if (!activityRun.success) {
-    throw new NotFoundError(
-      "Activity not found or you don't have permission for it.",
-    );
-  }
 
   res.status(200).json(activityRun);
 });
@@ -78,12 +63,7 @@ const deleteActivityRun = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const activityId = req.params.id;
 
-  const result = await db.deleteActivityRun(activityId, userId);
-  if (!result.success) {
-    throw new NotFoundError(
-      "Activity not found or you don't have permission to delete it.",
-    );
-  }
+  await db.deleteActivityRun(activityId, userId);
 
   res.status(200).json({ message: "Deleted successfully" });
 });
