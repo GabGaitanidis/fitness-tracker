@@ -1,6 +1,6 @@
 const pool = require("./pool.js");
 const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
-
+const validQueryGenerator = require("../utils/validQueryGenerator.js");
 async function fetchExerciseExecutions(activityliftid) {
   const { rows, rowCount } = await pool.query(
     "SELECT * FROM exerciseexecution WHERE activityliftid = $1",
@@ -15,8 +15,8 @@ async function fetchExerciseExecutions(activityliftid) {
 }
 
 async function insertExerciseExecutions(data) {
-  const { activityliftid, exerciseid, kg, reps, sets } = data;
-  const values = [activityliftid, exerciseid, kg, reps, sets];
+  const { exerciseid, kgs, reps, sets, activityliftid } = data;
+  const values = [activityliftid, exerciseid, kgs, reps, sets];
 
   const { rows, rowCount } = await pool.query(
     "INSERT INTO exerciseexecution (activityliftid, exerciseid, kgs, reps, sets) VALUES ($1,$2,$3,$4,$5) RETURNING *",
@@ -32,12 +32,7 @@ async function insertExerciseExecutions(data) {
 
 async function updateExerciseExecution(id, data) {
   ALLOWED_FIELDS = ["kgs", "reps", "sets"];
-  const [setClause, values] = validQueryGenerator(
-    ALLOWED_FIELDS,
-    userId,
-    id,
-    data,
-  );
+  const [setClause, values] = validQueryGenerator(ALLOWED_FIELDS, id, data);
   const query = `UPDATE exerciseexecution SET ${setClause} WHERE id = $${values.length} RETURNING *`;
 
   const { rows, rowCount } = await pool.query(query, values);

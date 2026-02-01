@@ -10,6 +10,7 @@ const getExerciseExecutions = asyncHandler(async (req, res) => {
 
 const createExerciseExecution = asyncHandler(async (req, res) => {
   req.body.activityliftid = req.params.activityLiftId;
+  console.log(req.body);
   const exerciseExecution = await db.insertExerciseExecutions(req.body);
 
   res.status(201).json(exerciseExecution);

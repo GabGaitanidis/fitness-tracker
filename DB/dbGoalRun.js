@@ -25,9 +25,13 @@ async function createGoalRun(data) {
 }
 
 async function updateRunGoal(userId, id, data) {
-  const fields = ["due_to", "km_goal", "notes", "name"];
-  const [setClause, values] = validQueryGenerator(fields, userId, id, data);
-
+  const ALLOWED_FIELDS = ["due_to", "km_goal", "notes", "name"];
+  const [setClause, values] = validQueryGenerator(
+    ALLOWED_FIELDS,
+    id,
+    data,
+    userId,
+  );
   const query = `UPDATE goals_running SET ${setClause} WHERE user_id = $${values.length - 1} AND id = $${values.length} RETURNING *`;
 
   const { rows } = await pool.query(query, values);

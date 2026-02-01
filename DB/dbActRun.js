@@ -1,5 +1,6 @@
 const pool = require("./pool.js");
 const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
+const validQueryGenerator = require("../utils/validQueryGenerator.js");
 
 async function fetchActivityRuns(
   userId,
@@ -72,9 +73,9 @@ async function updateActivityRun(id, userId, data) {
 
   const [setClause, values] = validQueryGenerator(
     ALLOWED_FIELDS,
-    userId,
     id,
     data,
+    userId,
   );
 
   const query = `

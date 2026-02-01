@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
-// RunEx Router
-router.get("/");
-router.get("/user/:id");
-router.get("/:id");
-router.post("/");
-router.put("/:id");
-router.delete("/:id");
+const ctrl = require("../Controllers/runExecutionController");
+
+router.get("/:activityRunId", ctrl.getRunExecutions);
+router.post("/", ctrl.createRunExecution);
+router.patch("/:id", ctrl.patchRunExecution);
+router.delete("/:id", ctrl.deleteRunExecution);
 
 module.exports = router;

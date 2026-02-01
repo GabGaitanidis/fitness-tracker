@@ -1,5 +1,6 @@
 const pool = require("./pool.js");
 const { NotFoundError, BadRequestError } = require("../Errors/errors.js");
+const validQueryGenerator = require("../utils/validQueryGenerator.js");
 
 async function fetchExercises(userId) {
   const { rows, rowCount } = await pool.query(
@@ -33,9 +34,9 @@ async function updateExercise(userId, id, data) {
   ALLOWED_FIELDS = ["name", "category"];
   const [setClause, values] = validQueryGenerator(
     ALLOWED_FIELDS,
-    userId,
     id,
     data,
+    userId,
   );
 
   const query = `UPDATE exercises SET ${setClause} WHERE user_id = $${values.length - 1} AND id = $${values.length} RETURNING *`;

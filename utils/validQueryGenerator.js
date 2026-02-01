@@ -1,4 +1,4 @@
-function validQueryGenerator(ALLOWED_FIELDS, userId = null, id, data) {
+function validQueryGenerator(ALLOWED_FIELDS, id, data, userId = null) {
   const entries = Object.entries(data).filter(([key]) =>
     ALLOWED_FIELDS.includes(key),
   );
