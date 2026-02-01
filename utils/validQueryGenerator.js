@@ -18,3 +18,4 @@ function validQueryGenerator(ALLOWED_FIELDS, id, data, userId = null) {
 
   return [setClause, values];
 }
+module.exports = validQueryGenerator;

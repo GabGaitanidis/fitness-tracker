@@ -1,5 +1,5 @@
 const db = require("../DB/dbRunExecution.js");
-const asyncHandler = require("../utils/asyncHandler");
+const asyncHandler = require("../utils/asyncHandler.js");
 
 const getRunExecutions = asyncHandler(async (req, res) => {
   const activityRunId = req.params.activityRunId;
@@ -11,7 +11,6 @@ const getRunExecutions = asyncHandler(async (req, res) => {
 const createRunExecution = asyncHandler(async (req, res) => {
   req.body.activityrunid = req.params.activityRunId;
 
-  console.log(req.body);
   const runExecution = await db.insertRunExecution(req.body);
 
   res.status(201).json(runExecution);

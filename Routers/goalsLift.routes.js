@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../Controllers/goalLiftController");
+const controller = require("../Controllers/goalsLiftController");
 
 router.get("/", controller.getLiftGoal);
 router.post("/", controller.createLiftGoal);

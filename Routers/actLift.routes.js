@@ -5,6 +5,6 @@ const coontroller = require("../Controllers/activityLiftController.js");
 router.get("/", coontroller.getActivityLifts);
 router.get("/:id", coontroller.getActivityLift);
 router.post("/", coontroller.createActivityLift);
-router.put("/:id", coontroller.updateActivityLift);
+router.patch("/:id", coontroller.updateActivityLift);
 router.delete("/:id", coontroller.deleteActivityLift);
 module.exports = router;

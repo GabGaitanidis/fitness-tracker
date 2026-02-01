@@ -45,10 +45,6 @@ async function fetchActivityLifts(
 }
 
 async function fetchActivityLift(id, userId) {
-  // const { rows, rowCount } = await pool.query(
-  //   "SELECT * FROM activitylift WHERE id = $1 AND user_id = $2",
-  //   [id, userId],
-  // );
   const { rows, rowCount } = await pool.query(
     `SELECT
       a.name AS exercise_name,

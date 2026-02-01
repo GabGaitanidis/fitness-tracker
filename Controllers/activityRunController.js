@@ -5,6 +5,7 @@ const checkUserId = require("../utils/checkUserId.js");
 
 const getActivityRuns = asyncHandler(async (req, res) => {
   checkUserId(req.user.id);
+  const userId = req.user.id;
 
   const sortByFields = ["name", "duration", "date"];
   const page = parseInt(req.query.page) || 1;

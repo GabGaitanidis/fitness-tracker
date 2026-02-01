@@ -15,7 +15,7 @@ router.get("/:id", userValidation.idValidation(), userController.getUser);
 
 router.delete("/:id", userController.removeUser);
 router.patch(
-  "/body/:id",
+  "/:id",
   userValidation.bodyFormValidation(),
   userController.updateBodyInfo,
 );

@@ -5,6 +5,8 @@ const controller = require("../Controllers/activityRunController.js");
 const router = express.Router();
 // activityRun Router
 router.get("/", controller.getActivityRuns);
+router.get("/:id", controller.getActivityRun);
+
 router.post(
   "/",
   activityRunValidation.activityRunBodyValidation,

@@ -42,6 +42,7 @@ const removeUser = asyncHandler(async (req, res) => {
 });
 
 const updateBodyInfo = asyncHandler(async (req, res) => {
+  console.log(req.body);
   const userInfo = await db.updateBodyInfo(req.body, req.params.id);
   if (!userInfo) {
     throw new NotFoundError("User not found!");
