@@ -35,22 +35,37 @@ async function fetchActivityLifts(
     ? [userId, validCategory, limit, offset]
     : [userId, limit, offset];
 
-  const { rows } = await pool.query(query, queryParams);
+  const { rows, rowCount } = await pool.query(query, queryParams);
+  if (rowCount === 0) {
+    throw new NotFoundError("Activity not found");
+  }
 
   return rows;
 }
 
 async function fetchActivityLift(id, userId) {
+  // const { rows, rowCount } = await pool.query(
+  //   "SELECT * FROM activitylift WHERE id = $1 AND user_id = $2",
+  //   [id, userId],
+  // );
   const { rows, rowCount } = await pool.query(
-    "SELECT * FROM activitylift WHERE id = $1 AND user_id = $2",
+    `SELECT
+      a.name AS exercise_name,
+      e.kgs,
+      e.reps,
+      e.sets,
+      o.id
+      FROM exerciseexecution e
+      JOIN exercises a ON e.exerciseid = a.id
+      JOIN activitylift o ON e.activityliftid = o.id
+      WHERE o.id = $1 AND o.user_id = $2`,
     [id, userId],
   );
-
   if (rowCount === 0) {
     throw new NotFoundError("Activity not found");
   }
 
-  return rows[0];
+  return rows;
 }
 
 async function insertActivityLift(data) {

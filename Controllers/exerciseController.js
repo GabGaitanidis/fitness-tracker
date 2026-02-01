@@ -1,8 +1,11 @@
 const db = require("../DB/dbExercises");
 const asyncHandler = require("../utils/asyncHandler");
+const checkUserId = require("../utils/checkUserId");
 
 const getExercises = asyncHandler(async (req, res) => {
-  const exercises = await db.fetchExercises(req.user.id);
+  checkUserId(req.user.id);
+  const userId = req.user.id;
+  const exercises = await db.fetchExercises(userId);
   res.status(200).json(exercises);
 });
 
@@ -31,4 +34,3 @@ module.exports = {
   updateExercise,
   deleteExercise,
 };
-s;

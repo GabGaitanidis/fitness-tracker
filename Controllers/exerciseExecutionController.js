@@ -1,6 +1,5 @@
 const db = require("../DB/dbExerciseEx.js");
 const asyncHandler = require("../utils/asyncHandler");
-const { NotFoundError } = require("../Errors/errors.js");
 
 const getExerciseExecutions = asyncHandler(async (req, res) => {
   const activityLiftId = req.params.activityLiftId;

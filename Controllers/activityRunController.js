@@ -1,12 +1,10 @@
 const db = require("../DB/dbActRun.js");
 const asyncHandler = require("../utils/asyncHandler");
 const { NotFoundError, UnauthorizedError } = require("../Errors/errors.js");
+const checkUserId = require("../utils/checkUserId.js");
 
 const getActivityRuns = asyncHandler(async (req, res) => {
-  const userId = req.user?.id;
-  if (!userId) {
-    throw new UnauthorizedError("User not found!");
-  }
+  checkUserId(req.user.id);
 
   const sortByFields = ["name", "duration", "date"];
   const page = parseInt(req.query.page) || 1;
@@ -24,16 +22,12 @@ const getActivityRuns = asyncHandler(async (req, res) => {
     category,
   );
 
-  if (!activityRuns.success) {
-    throw new NotFoundError(
-      "Activity not found or you don't have permission for it.",
-    );
-  }
-
   res.status(200).json(activityRuns);
 });
 
 const getActivityRun = asyncHandler(async (req, res) => {
+  checkUserId(req.user.id);
+
   const userId = req.user.id;
   const id = req.params.id;
 
@@ -43,6 +37,8 @@ const getActivityRun = asyncHandler(async (req, res) => {
 });
 
 const createActivityRun = asyncHandler(async (req, res) => {
+  checkUserId(req.user.id);
+
   req.body.user_id = req.user.id;
 
   const activityRun = await db.insertActivityRun(req.body);
@@ -51,6 +47,8 @@ const createActivityRun = asyncHandler(async (req, res) => {
 });
 
 const updateActivityRun = asyncHandler(async (req, res) => {
+  checkUserId(req.user.id);
+
   const userId = req.user.id;
   const id = req.params.id;
 
