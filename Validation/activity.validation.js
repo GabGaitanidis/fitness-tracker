@@ -1,16 +1,9 @@
-const { body, param, query, validationResult } = require("express-validator");
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  console.log("val");
-  if (errors.isEmpty()) {
-    console.log("empty");
-    return next();
-  }
-  return res.status(422).json({ errors: errors.array() });
-};
+const { body, param, query } = require("express-validator");
+const validate = require("../utils/validate");
 const activityRunBodyValidation = [
   body("name").notEmpty().withMessage("name cant be empty"),
-  body("date").notEmpty().withMessage("Give a right Date!"),
+  body("date").notEmpty().withMessage("Date cant be empty"),
+  body("date").isDate().withMessage("Give a right date"),
   body("location").notEmpty().withMessage("location cant be empty"),
   body("duration").notEmpty().withMessage("duration cant be empty"),
   body("category").notEmpty().withMessage("category cant be empty"),

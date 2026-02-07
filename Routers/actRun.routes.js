@@ -1,6 +1,6 @@
 const express = require("express");
 const authToken = require("../Auth/authToken.js");
-const activityRunValidation = require("../Validation/activityRun.validation.js");
+const activityRunValidation = require("../Validation/activity.validation.js");
 const controller = require("../Controllers/activityRunController.js");
 const router = express.Router();
 // activityRun Router

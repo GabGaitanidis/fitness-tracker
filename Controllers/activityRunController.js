@@ -1,6 +1,5 @@
 const db = require("../DB/dbActRun.js");
 const asyncHandler = require("../utils/asyncHandler");
-const { NotFoundError, UnauthorizedError } = require("../Errors/errors.js");
 const checkUserId = require("../utils/checkUserId.js");
 
 const getActivityRuns = asyncHandler(async (req, res) => {
