@@ -89,11 +89,3 @@ The server listens on port `3000` by default; you can override it by setting the
 ## Validation
 
 All body and param validation is implemented with `express-validator`. Validation rule files are in the `Validation/` folder and the project uses `utils/validate.js` to return `422` responses with validation error arrays.
-
-## Notes & next steps
-
-- Add database schema/migrations and seed data.
-- Add tests and CI.
-- Consider adding a `.env` loader (`dotenv`) and a `npm start` script.
-
-If you want, I can add a `start` script, sample `.env.example`, or API documentation (OpenAPI/Swagger).
