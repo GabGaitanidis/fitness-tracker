@@ -15,8 +15,8 @@ const login = async (req, res) => {
   const { password: pwd, ...payload } = user;
   const token = jwt.sign(payload, secret, { expiresIn: "1h" });
   res.cookie("token", token, {
-    httpOnly: true, // Prevents JS access (Security!)
-    secure: false, // Only sends over HTTPS (use false for localhost)
+    httpOnly: true, // Prevents JS access
+    secure: false, // Only sends over HTTP
     sameSite: "strict", // Prevents CSRF attacks
     maxAge: 7200000,
     path: "/",

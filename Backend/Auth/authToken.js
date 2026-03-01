@@ -8,7 +8,6 @@ const authenticateToken = (req, res, next) => {
       .json({ message: "Access denied. No token provided." });
   }
   try {
-    // use environment variable for JWT secret
     const secret = process.env.JWT_SECRET || "secret";
     const verified = jwt.verify(token, secret);
     req.user = verified;
